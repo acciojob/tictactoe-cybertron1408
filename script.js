@@ -1,4 +1,4 @@
-<script>
+
     const submitBtn = document.getElementById('submit');
     const board = document.getElementById('board');
     const gameDiv = document.getElementById('game');
@@ -60,4 +60,3 @@
         return moves[a] && moves[a] === moves[b] && moves[a] === moves[c];
       });
     }
-  </script>
