@@ -15,6 +15,25 @@
     h1 {
       margin-bottom: 20px;
     }
+    form {
+      margin-bottom: 15px;
+    }
+    input {
+      font-size: 1rem;
+      padding: 5px 8px;
+      margin-right: 10px;
+    }
+    button {
+      font-size: 1rem;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    .message {
+      margin-bottom: 15px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      min-height: 24px;
+    }
     .board {
       display: grid;
       grid-template-columns: repeat(3, 100px);
@@ -30,69 +49,135 @@
       cursor: pointer;
       user-select: none;
     }
+    .cell.disabled {
+      cursor: not-allowed;
+      color: #999;
+    }
   </style>
 </head>
 <body>
   <h1>Tic Tac Toe</h1>
-  <div class="board" id="board">
-    <div class="cell" data-index="0"></div>
-    <div class="cell" data-index="1"></div>
-    <div class="cell" data-index="2"></div>
-    <div class="cell" data-index="3"></div>
-    <div class="cell" data-index="4"></div>
-    <div class="cell" data-index="5"></div>
-    <div class="cell" data-index="6"></div>
-    <div class="cell" data-index="7"></div>
-    <div class="cell" data-index="8"></div>
+
+  <!-- Player input form -->
+  <form id="playerForm">
+    <input type="text" id="player1" placeholder="Player 1 Name" required />
+    <input type="text" id="player2" placeholder="Player 2 Name" required />
+    <button type="submit" id="submit">Start Game</button>
+  </form>
+
+  <!-- Message area -->
+  <div class="message"></div>
+
+  <!-- Game board -->
+  <div class="board" id="board" style="display:none;">
+    <div class="cell" id="0" data-index="0"></div>
+    <div class="cell" id="1" data-index="1"></div>
+    <div class="cell" id="2" data-index="2"></div>
+    <div class="cell" id="3" data-index="3"></div>
+    <div class="cell" id="4" data-index="4"></div>
+    <div class="cell" id="5" data-index="5"></div>
+    <div class="cell" id="6" data-index="6"></div>
+    <div class="cell" id="7" data-index="7"></div>
+    <div class="cell" id="8" data-index="8"></div>
   </div>
 
   <script>
-    const board = document.getElementById('board');
-    const cells = board.querySelectorAll('.cell');
-    let turn = 'X';
+    const playerForm = document.getElementById('playerForm');
+    const player1Input = document.getElementById('player1');
+    const player2Input = document.getElementById('player2');
+    const submitBtn = document.getElementById('submit');
+    const messageDiv = document.querySelector('.message');
+    const boardDiv = document.getElementById('board');
+    const cells = boardDiv.querySelectorAll('.cell');
+
+    let player1 = '';
+    let player2 = '';
+    let currentPlayer = 'X';
+    let currentPlayerName = '';
     let boardState = Array(9).fill(null);
+    let gameActive = false;
+
+    // Winning combinations
+    const wins = [
+      [0,1,2],[3,4,5],[6,7,8],
+      [0,3,6],[1,4,7],[2,5,8],
+      [0,4,8],[2,4,6]
+    ];
 
     function checkWinner() {
-      const wins = [
-        [0,1,2],[3,4,5],[6,7,8], // rows
-        [0,3,6],[1,4,7],[2,5,8], // columns
-        [0,4,8],[2,4,6]          // diagonals
-      ];
       for (const [a,b,c] of wins) {
         if (
-          boardState[a] && 
-          boardState[a] === boardState[b] && 
+          boardState[a] &&
+          boardState[a] === boardState[b] &&
           boardState[a] === boardState[c]
-        ) return boardState[a];
+        ) {
+          return boardState[a];
+        }
       }
       return null;
     }
 
-    function handleClick(e) {
-      const idx = e.target.dataset.index;
-      if (!boardState[idx]) {
-        boardState[idx] = turn;
-        e.target.textContent = turn;
-        const winner = checkWinner();
-        if (winner) {
-          alert(`Player ${winner} wins!`);
-          resetBoard();
-          return;
-        }
-        if (!boardState.includes(null)) {
-          alert('Draw!');
-          resetBoard();
-          return;
-        }
-        turn = turn === 'X' ? 'O' : 'X';
-      }
+    function updateMessage(text) {
+      messageDiv.textContent = text;
     }
 
     function resetBoard() {
       boardState.fill(null);
-      cells.forEach(cell => cell.textContent = '');
-      turn = 'X';
+      cells.forEach(cell => {
+        cell.textContent = '';
+        cell.classList.remove('disabled');
+      });
+      currentPlayer = 'X';
+      currentPlayerName = player1;
+      updateMessage(`${currentPlayerName}, you're up`);
+      gameActive = true;
     }
+
+    function handleClick(e) {
+      if (!gameActive) return;
+
+      const idx = e.target.dataset.index;
+      if (!boardState[idx]) {
+        boardState[idx] = currentPlayer;
+        e.target.textContent = currentPlayer;
+        e.target.classList.add('disabled');
+
+        const winner = checkWinner();
+        if (winner) {
+          updateMessage(`${currentPlayerName} congratulations you won!`);
+          gameActive = false;
+          return;
+        }
+
+        if (!boardState.includes(null)) {
+          updateMessage('Draw!');
+          gameActive = false;
+          return;
+        }
+
+        // Switch turns
+        if (currentPlayer === 'X') {
+          currentPlayer = 'O';
+          currentPlayerName = player2;
+        } else {
+          currentPlayer = 'X';
+          currentPlayerName = player1;
+        }
+        updateMessage(`${currentPlayerName}, you're up`);
+      }
+    }
+
+    playerForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      player1 = player1Input.value.trim() || 'Player1';
+      player2 = player2Input.value.trim() || 'Player2';
+
+      // Hide form, show board
+      playerForm.style.display = 'none';
+      boardDiv.style.display = 'grid';
+
+      resetBoard();
+    });
 
     cells.forEach(cell => cell.addEventListener('click', handleClick));
   </script>
